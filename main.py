@@ -18,7 +18,12 @@ class Board:
         self.num_moves = 0
         
         
-   
+    def make_copy(self):
+        new_board = Board(self.board_shape)
+        new_board.board = np.copy(self.board)
+        new_board.num_moves = self.num_moves
+        return new_board
+
 
     def print_board(self):
         """ Pretty printing for the board object instance. """
@@ -42,7 +47,7 @@ class Board:
     def get_empty_squares(self):
         empty_squares = []
         for position in self.board.flat:
-            if position != -1 or position != -2:
+            if position != -1 and position != -2:
                 empty_squares.append(position)
 
         return empty_squares
@@ -117,9 +122,10 @@ class Board:
     
 
 def minimax(board, depth, maximizingPlayer):
-    """ Recursive function to determine the best possible next move to a fastest win.
+    """ Recursive algorithm to determine the best possible next move to a fastest win.
         Implementation of the minimax algorithm.
-        For TicTacToe, there are only 255168 possible games so the game tree is small enough to search
+        For TicTacToe, there are only 255168 possible games so the game tree is 
+        small enough to search
         to the very bottom depth each move.
 
         Point values are as follows:
@@ -127,11 +133,14 @@ def minimax(board, depth, maximizingPlayer):
         -10 for human win 
         0 for draw
 
-        Since we will get many leaf nodes with the same win value, we will subtract the depth from them
+        Since we will get many leaf nodes with the same win value, 
+        we will subtract the depth from them
         so we are taking the FASTEST path to win.
 
-        Note: computer is 'O' and is therefore player 2 meaning check_for_win() will return -2 for comp win.
+        Note: computer is 'O' and is therefore player 2 meaning check_for_win() 
+        will return -2 for comp win.
         """
+
     win_check = board.check_for_win()
 
     # If someone has won, reached bottom of this 'tree path'. Will recurse this value back to top.
@@ -140,31 +149,31 @@ def minimax(board, depth, maximizingPlayer):
         elif win_check == -2: return 10 # comp wins
         else: return 0 # draw
 
-    empty_squares = (board.board_shape ** 2) - board.num_moves
     if maximizingPlayer:
         max_eval = -math.inf
-        possible_next_moves = get_empty_squares(board)
+        possible_next_moves = board.get_empty_squares()
         for move in possible_next_moves:
-            board_copy = np.copy(board.board)
-            board_copy.make_move(move, 'O')
+            board_copy = board.make_copy()
+            board_copy.make_move(move, -2)
             move_eval = minimax(board_copy, depth + 1, False) 
             if move_eval > max_eval:
                 max_eval = move_eval
                 best_move = move
         if depth == 0:
             return best_move
+
         return max_eval
 
     else:
         min_eval = math.inf
-        possible_next_moves = get_empty_squares(board)
+        possible_next_moves = board.get_empty_squares()
 
         for move in possible_next_moves:
-            board_copy = np.copy(board.board)
-            board_copy.make_move(move, 'X')
+            board_copy = board.make_copy()
+            board_copy.make_move(move, -1)
             move_eval = minimax(board_copy, depth + 1, True)
             min_eval = min(move_eval, min_eval)
-        return max_eval
+        return min_eval
 
 
 def human_turn(board, player_number):
@@ -178,21 +187,23 @@ def human_turn(board, player_number):
 
         except ValueError:
             print("Not an int ")
-            continue
+            human_turn(board, player_number)
             
         # Check move is in range of spaces
         if player_move < 1 or player_move > 9:
             print("Invalid Move: Must be integer in range [1,9].")
-            continue
+            human_turn(board, player_number)
+
 
         # Attempt to make move on board
-        if board.make_move(player_move, -player_number):
+        elif board.make_move(player_move, -player_number):
             print("Invalid Move: " + str(player_move) )
-            continue
+            human_turn(board, player_number)
         
+        # Valid move, make it.
+        else:
+            board.make_move(player_move, -player_number)
 
-
-def computer_turn(board, player_number):
 
 
 def play_comp(board):
@@ -202,7 +213,7 @@ def play_comp(board):
     Human is therefore Player 1 and is X.
     
     """
-    print("Selected vs cOmputer mode: Begin game")
+    print("Selected vs Computer mode: Begin game")
     print("Player is X's")
     print("Computer is O's")
 
@@ -210,47 +221,56 @@ def play_comp(board):
 
     board.print_board()
 
-    current_player = 1 # Player 1 is human, player 2 is computer.
-    
+    current_player = 1 # Player 1 is human, player 2 is computer. Human goes first
+
     while True:
 
-        # Input move
-        player_move = input("Player " + str(current_player) + " select a number: ")
-        print('\n')
-        # Check that input is valid
-        try:
-            player_move = int(player_move)
+        # Human turn 
+        if current_player == 1:
+            human_turn(board, current_player)
+            # Check for win
+            win_check = board.check_for_win()
 
-        except ValueError:
-            print("Not an int ")
-            continue
-        
-         # Check move is in range of spaces
-        if player_move < 1 or player_move > 9:
-            print("Invalid Move: Must be integer in range [1,9].")
-            continue
+            if win_check:
+                board.print_board()
 
-        # Attempt to make move on board
-        if board.make_move(player_move, -current_player):
-            print("Invalid Move: " + str(player_move) )
-            continue
-            
+                if win_check == -3:
+                    print("Draw!")
+                    sys.exit()
+                else:
+                    print("Player" + str(current_player) + " wins!")
+                    sys.exit()
 
-        # Check for win
-        win_check = board.check_for_win()
-
-        if win_check:
             board.print_board()
+            current_player = 2
 
-            if win_check == -3:
-                print("Draw!")
-                sys.exit()
-            else:
-                print("Player" + str(current_player) + " wins!")
-                sys.exit()
+        # Computer turn 
+        else:
+            print("Computer thinking...\n")
+            board.make_move(minimax(board, 0, True), -current_player)
 
-        board.print_board()
-        current_player = 2 if current_player == 1 else 1
+             # Check for win
+            win_check = board.check_for_win()
+
+            if win_check:
+                board.print_board()
+
+                if win_check == -3:
+                    print("Draw!")
+                    sys.exit()
+                else:
+                    print("Player" + str(current_player) + " wins!")
+                    sys.exit()
+
+            board.print_board()
+            current_player = 1
+
+
+
+
+
+    
+
 
 
 
@@ -267,7 +287,7 @@ def play_2player(board):
 
     # Game loop until win or draw.
     while True: 
-        human_turn(board, current_player):
+        human_turn(board, current_player)
 
         # Check for win
         win_check = board.check_for_win()
@@ -303,6 +323,10 @@ def launch_game():
     elif mode_select == "computer":
         play_comp(Board(BOARD_DIM))
 
+    elif mode_select == "debug":
+        playing_board = Board(BOARD_DIM)
+        playing_board.make_move(2,-1)
+        print(playing_board.get_empty_squares())
     else:
         print("Invalid mode: please try again")
         launch_game()
