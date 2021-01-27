@@ -12,9 +12,10 @@ class Board:
     MOVE_INVALID = 1
     
     def __init__(self, shape):
+        """ Initialise board of a specified size. """
 
         self.board_shape = shape # Easier to store instead of calling self.board.shape[0]
-
+        
         res = []
         for i in range(shape):
             res.append(np.arange(shape*i, shape*(i+1)))

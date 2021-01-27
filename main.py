@@ -7,12 +7,12 @@ from board import Board
 
 
 def validate_win(board, win_check):
-    """ 
+    """
+
     Validation and printing for win information. 
     Kept seperate from check_for_win() so simulated games aren't printed.
     
     """
-
     if win_check:
         board.print_board()
 
@@ -25,7 +25,9 @@ def validate_win(board, win_check):
     
 
 def minimax(board, depth, maximizingPlayer):
-    """ Recursive algorithm to determine the best possible next move to a fastest win.
+
+    """ 
+        Recursive algorithm to determine the best possible next move to a fastest win.
         Implementation of the minimax algorithm. This algorithm has no idea of the games rules or 
         what constitues a good move. It simply goes off a point value system coded in.
 
